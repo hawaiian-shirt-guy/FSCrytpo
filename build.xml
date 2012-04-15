@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="FSCrypto" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" default="master">
+	<property name="src" location="src"/>
+	<property name="lib" location="lib"/>
+	<property name="build" location="bin"/>
+	<property name="test-src" location="tests"/>
+	<property name="test-lib" location="test-lib"/>
+	<property name="test-build" location="test-bin"/>
+	
+	<path id="lib-path">
+		<fileset dir="${lib}">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+	<path id="test-lib-path">
+		<fileset dir="${test-lib}">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+	
+	<target name="init">
+		<tstamp/>
+		<mkdir dir="${build}"/>
+		<mkdir dir="${test-build}"/>
+		<mkdir dir="${lib}"/>
+		<mkdir dir="${test-lib}"/>
+	</target>
+	
+	<target name="resolve" depends="init">
+		<ivy:configure/>
+		<ivy:resolve file="ivy.xml" conf="build"/>
+		<ivy:retrieve pattern="${lib}/[artifact]-[revision].[ext]" conf="build"/>
+	</target>
+	
+	<target name="resolve-tests" depends="resolve">
+		<ivy:resolve file="ivy.xml" conf="test"/>
+		<ivy:retrieve pattern="${test-lib}/[artifact]-[revision].[ext]" conf="test"/>
+	</target>
+	
+	<target name="compile" depends="resolve">
+		<javac srcdir="${src}" destdir="${build}" debug="true">
+			<classpath refid="lib-path"/>
+		</javac>
+	</target>
+	
+	<target name="compile-tests" depends="resolve-tests, compile">
+		<javac srcdir="${test-src}" destdir="${test-build}" debug="true">
+			<src path="${src}"/>
+			<classpath refid="test-lib-path"/>
+		</javac>
+	</target>
+	
+	<target name="run-tests" depends="compile-tests">
+		<junit printsummary="yes" showoutput="yes">
+			<batchtest todir="." haltonfailure="true" haltonerror="true">
+				<fileset dir="${test-build}">
+					<include name="**/*Test*.class"/>
+				</fileset>
+			</batchtest>
+			<classpath>
+				<pathelement location="${test-build}"/>
+				<path refid="test-lib-path"/>
+			</classpath>
+			<formatter type="plain"/>
+		</junit>
+	</target>
+	
+	<target name="make-jar" depends="compile">
+		<jar destfile="${ant.project.name}.jar" basedir="${build}"/>
+	</target>
+	
+	<target name="clean">
+		<delete dir="${build}"/>
+		<delete dir="${test-build}"/>
+		<delete dir="${lib}"/>
+		<delete dir="${test-lib}"/>
+	</target>
+	
+	<target name="master" depends="run-tests, make-jar, clean"/>
+	
+	<target name="notests" depends="make-jar, clean"/>
+</project>
