@@ -1,8 +1,8 @@
 package com.fscrypto.cipher;
 
-import static com.fscrypto.cipher.CipherEngines.*;
-import static com.fscrypto.cipher.CipherModes.*;
-import static com.fscrypto.cipher.CipherPaddings.*;
+import static com.fscrypto.cipher.Engines.*;
+import static com.fscrypto.cipher.Modes.*;
+import static com.fscrypto.cipher.Paddings.*;
 import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
@@ -41,10 +41,9 @@ public class SymmetricCipherTests {
 						
 						out = new ByteArrayOutputStream();
 						byte[] key = new byte[keySize / 8];
-						System.err.println("testEncrypt() with Transform: " + engine + "/" + mode + "/" + padding + " " + 
-										   "Key size: " + keySize);
 						new Random().nextBytes(key);
-						byte[] dummyData = new byte[new Random().nextInt(10) * Utils.getBlockSize(engine)];
+						int dataSize = Utils.getBlockSize(engine) == 0 ? 13 : 10 * Utils.getBlockSize(engine); 
+						byte[] dummyData = new byte[dataSize];
 						
 						new Random().nextBytes(dummyData);
 						SymmetricCipher.encrypt(engine, 
@@ -54,7 +53,11 @@ public class SymmetricCipherTests {
 										 		new ByteArrayInputStream(dummyData), 
 										 		new ByteArrayInputStream(key), 
 										 		out);
+						byte[] testOutput = out.toByteArray();
 						out.close();
+						assertTrue("testEncrypt() failed with Transform: " + engine + "/" + mode + "/" + padding + " " + 
+								   "Key size: " + keySize,
+								   testOutput.length > 0);
 					}
 				}
 			}
@@ -92,8 +95,6 @@ public class SymmetricCipherTests {
 						decryptOut = new PipedOutputStream(stringInput);
 						
 						byte[] key = new byte[keySize / 8];
-						System.err.println("testSanity() with Transform: " + engine + "/" + mode + "/" + padding + " " + 
-										   "Key size: " + keySize);
 						new Random().nextBytes(key);
 						byte[] dummyData = new byte[new Random().nextInt(10) * Utils.getBlockSize(engine)];
 						
@@ -114,7 +115,10 @@ public class SymmetricCipherTests {
 												new ByteArrayInputStream(key), 
 												decryptOut);
 						decryptOut.close();
-						assertArrayEquals(dummyData, IOUtils.toByteArray(stringInput));
+						assertArrayEquals("testSanity() failed with Transform: " + engine + "/" + mode + "/" + padding + 
+										  " " + "Key size: " + keySize,
+								   		  dummyData, 
+								   		  IOUtils.toByteArray(stringInput));
 					}
 				}
 			}

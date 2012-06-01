@@ -1,31 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="FSCrypto" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" default="master">
+  <property environment="env"/>
 	<property name="src" location="src"/>
 	<property name="lib" location="lib"/>
 	<property name="build" location="bin"/>
-	<property name="test-src" location="tests"/>
-	<property name="test-lib" location="test-lib"/>
-	<property name="test-build" location="test-bin"/>
+	<property name="test.src" location="tests"/>
+	<property name="test.lib" location="test.lib"/>
+	<property name="test.build" location="test-bin"/>
+	<property name="instrumented.build" location="instrumented-bin"/>
+	<property name="test.output" location="test-output"/>
+	<property name="findbugs.home" value="${env.FINDBUGS_HOME}"/>
+	<property name="cobertura.dir" value="${env.COBERTURA_HOME}"/>
+	<property name="javadoc.output" location="javadocs"/>
 	
-	<path id="lib-path">
+	<path id="cobertura.classpath">
+	    <fileset dir="${cobertura.dir}">
+	        <include name="cobertura.jar" />
+	        <include name="lib/**/*.jar" />
+	    </fileset>
+	</path>
+	<path id="lib.path">
 		<fileset dir="${lib}">
 			<include name="**/*.jar"/>
 		</fileset>
 	</path>
-	<path id="test-lib-path">
-		<fileset dir="${test-lib}">
+	<path id="test.lib.path">
+		<fileset dir="${test.lib}">
 			<include name="**/*.jar"/>
 		</fileset>
 	</path>
 	
+	<!--<taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
+	<taskdef classpath="cobertura.jar" resource="tasks.properties"/> -->
+	
 	<target name="init">
 		<tstamp/>
+		<delete dir="${build}"/>
+		<delete dir="${test.build}"/>
+		<delete dir="${lib}"/>
+		<delete dir="${test.lib}"/>
+		<delete dir="${instrumented.build}"/>
+		<delete dir="${test.output}"/>
+		<delete dir="${javadoc.output}}"/>
 		<mkdir dir="${build}"/>
-		<mkdir dir="${test-build}"/>
+		<mkdir dir="${test.build}"/>
 		<mkdir dir="${lib}"/>
-		<mkdir dir="${test-lib}"/>
+		<mkdir dir="${test.lib}"/>
+		<mkdir dir="${instrumented.build}"/>
+		<mkdir dir="${test.output}"/>
+		<mkdir dir="${javadoc.output}"/>
+		
+		<available classname="edu.umd.cs.findbugs.anttask.FindBugsTask" property="findbugs.present"/>
+		<available classname="net.sourceforge.cobertura.ant.InstrumentTask" property="cobertura.present"/>
 	</target>
 	
+	<target name="init-findbugs" depends="init" if="findbugs.present">
+		
+	</target>
+		
 	<target name="resolve" depends="init">
 		<ivy:configure/>
 		<ivy:resolve file="ivy.xml" conf="build"/>
@@ -34,49 +66,99 @@
 	
 	<target name="resolve-tests" depends="resolve">
 		<ivy:resolve file="ivy.xml" conf="test"/>
-		<ivy:retrieve pattern="${test-lib}/[artifact]-[revision].[ext]" conf="test"/>
+		<ivy:retrieve pattern="${test.lib}/[artifact]-[revision].[ext]" conf="test"/>
 	</target>
 	
 	<target name="compile" depends="resolve">
-		<javac srcdir="${src}" destdir="${build}" debug="true">
-			<classpath refid="lib-path"/>
+		<javac srcdir="${src}" destdir="${build}" debug="true" includeantruntime="false">
+			<compilerarg value="-Xlint:all"/>
+			<compilerarg value="-Werror"/>
+			<classpath refid="lib.path"/>
 		</javac>
-	</target>
-	
-	<target name="compile-tests" depends="resolve-tests, compile">
-		<javac srcdir="${test-src}" destdir="${test-build}" debug="true">
-			<src path="${src}"/>
-			<classpath refid="test-lib-path"/>
-		</javac>
-	</target>
-	
-	<target name="run-tests" depends="compile-tests">
-		<junit printsummary="yes" showoutput="yes">
-			<batchtest todir="." haltonfailure="true" haltonerror="true">
-				<fileset dir="${test-build}">
-					<include name="**/*Test*.class"/>
-				</fileset>
-			</batchtest>
-			<classpath>
-				<pathelement location="${test-build}"/>
-				<path refid="test-lib-path"/>
-			</classpath>
-			<formatter type="plain"/>
-		</junit>
 	</target>
 	
 	<target name="make-jar" depends="compile">
 		<jar destfile="${ant.project.name}.jar" basedir="${build}"/>
 	</target>
 	
-	<target name="clean">
-		<delete dir="${build}"/>
-		<delete dir="${test-build}"/>
-		<delete dir="${lib}"/>
-		<delete dir="${test-lib}"/>
+	<target name="compile-tests" depends="resolve-tests, make-jar">
+		<javac srcdir="${test.src}" destdir="${test.build}" debug="true" includeantruntime="false">
+			<classpath>
+				<path refid="test.lib.path"/>
+				<pathelement location="${ant.project.name}.jar"/>
+			</classpath>
+		</javac>
+		<copy todir="${test.build}">
+			<fileset dir="testing-resources">
+				<exclude name="**/*.java"/>
+			</fileset>
+		</copy>
 	</target>
 	
-	<target name="master" depends="run-tests, make-jar, clean"/>
+	<target name="instrument-tests" depends="compile-tests" if="cobertura.present">
+    <taskdef classpath="cobertura.jar" resource="tasks.properties"/>
+		<cobertura-instrument todir="${instrumented.build}" datafile="${test.output}/cobertura.ser">
+		    <fileset dir="${build}">
+		        <include name="**/*.class"/>
+		    </fileset>
+		</cobertura-instrument>
+	</target>
+	
+	<target name="run-tests" depends="instrument-tests" if="cobertura.present">
+		<junit printsummary="yes" showoutput="yes" fork="yes">
+			<jvmarg value="-XX:-UseSplitVerifier"/>
+			<classpath>
+				<pathelement location="${test.build}"/>
+				<pathelement location="${instrumented.build}"/>
+				<pathelement location="${ant.project.name}.jar"/>
+				<path refid="test.lib.path"/>
+				<fileset dir="${cobertura.dir}">
+					<include name="**/*.jar"/>
+				</fileset>
+			</classpath>
+			<sysproperty key="net.sourceforge.cobertura.datafile" file="${test.output}/cobertura.ser"/>
+			<formatter type="plain"/>
+			<batchtest todir="${test.output}" haltonfailure="true" haltonerror="true">
+				<fileset dir="${test.build}">
+					<include name="**/*Test*.class"/>
+					<exclude name="**/*$*.class"/>
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+	
+	<target name="run-coverage-report" depends="run-tests" if="cobertura.present">
+		    <cobertura-report srcdir="${src}" destdir="${test.output}" datafile="${test.output}/cobertura.ser"/>
+	</target>
+	
+	<target name="findbugs" depends="make-jar" if="findbugs.present">
+    <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
+		<findbugs home="${findbugs.home}" output="html" outputfile="${test.output}/fscrypto-findbugs.html" effort="max" reportLevel="low">
+			<auxClasspath refid="lib.path"/>
+			<sourcePath path="${src}"/>
+			<class location="${ant.project.name}.jar"/>
+		</findbugs>
+	</target>
+	
+	<target name="javadocs" depends="init">
+		<javadoc packagenames="com.fscrypto.*" 
+				 sourcepath="${src}" 
+				 defaultexcludes="yes" 
+				 destdir="${javadoc.output}" 
+				 author="true" 
+				 version="true" 
+				 windowtitle="FS Crypto"/>
+	</target>
+	
+	<target name="clean">
+		<delete dir="${build}"/>
+		<delete dir="${test.build}"/>
+		<delete dir="${lib}"/>
+		<delete dir="${test.lib}"/>
+		<delete dir="${instrumented.build}"/>
+	</target>
+	
+	<target name="master" depends="run-coverage-report, findbugs, javadocs, clean"/>
 	
 	<target name="notests" depends="make-jar, clean"/>
 </project>
