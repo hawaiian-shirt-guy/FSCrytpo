@@ -41,12 +41,10 @@ public class PublicKeyCipher {
 		final Cipher cipher = Cipher.getInstance(engine + "/" + mode + "/" + padding);
 		cipher.init(Cipher.ENCRYPT_MODE, key);
 		InputStreamReader.read(in, new InputStreamReadCallback() {
-			@Override
 			public void update(byte b) throws IOException, GeneralSecurityException {
 				byte[] input = {b};
 				update(input);
 			}
-			@Override
 			public void update(byte[] bytes) throws IOException, GeneralSecurityException {
 				out.write(cipher.update(bytes));
 			}
@@ -75,12 +73,10 @@ public class PublicKeyCipher {
 		final Cipher cipher = Cipher.getInstance(engine + "/" + mode + "/" + padding);
 		cipher.init(Cipher.DECRYPT_MODE, key);
 		InputStreamReader.read(in, new InputStreamReadCallback() {
-			@Override
 			public void update(byte b) throws IOException, GeneralSecurityException {
 				byte[] input = {b};
 				update(input);
 			}
-			@Override
 			public void update(byte[] bytes) throws IOException, GeneralSecurityException {
 				out.write(cipher.update(bytes));
 			}

@@ -31,12 +31,9 @@ public class Digester {
 									OutputStream	out) throws IOException, GeneralSecurityException {
 		final MessageDigest digester = MessageDigest.getInstance(algorithm);
 		InputStreamReader.read(in, new InputStreamReadCallback() {
-			@Override
 			public void update(byte b) throws GeneralSecurityException {
 				digester.update(b);
 			}
-			
-			@Override
 			public void update(byte[] bytes) throws GeneralSecurityException {
 				digester.update(bytes);				
 			}

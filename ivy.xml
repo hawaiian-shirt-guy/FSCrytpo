@@ -34,7 +34,7 @@
 		<dependency org="commons-io" name="commons-io" rev="2.1" conf="base->master">
 			<artifact name="commons-io" type="jar"/>
 		</dependency>
-		<dependency org="commons-codec" name="commons-codec" rev="latest.release" conf="test->master">
+		<dependency org="commons-codec" name="commons-codec" rev="latest.release" conf="base->master">
 			<artifact name="commons-codec" type="jar"/>
 		</dependency>
 		<dependency org="org.bouncycastle" name="bcpkix-jdk15on" rev="1.47" conf="test->master">

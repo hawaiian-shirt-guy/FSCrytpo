@@ -39,12 +39,9 @@ public class Signer {
 		final Signature signature = Signature.getInstance(algorithm);
 		signature.initSign(key);
 		InputStreamReader.read(in, new InputStreamReadCallback() {
-			@Override
 			public void update(byte b) throws GeneralSecurityException {
 				signature.update(b);				
 			}
-			
-			@Override
 			public void update(byte[] bytes) throws GeneralSecurityException {
 				signature.update(bytes);				
 			}
@@ -71,12 +68,9 @@ public class Signer {
 		final Signature signatureChecker = Signature.getInstance(algorithm);
 		signatureChecker.initVerify(key);
 		InputStreamReader.read(in, new InputStreamReadCallback() {
-			@Override
 			public void update(byte b) throws GeneralSecurityException {
 				signatureChecker.update(b);
 			}
-			
-			@Override
 			public void update(byte[] bytes) throws GeneralSecurityException {
 				signatureChecker.update(bytes);
 			}

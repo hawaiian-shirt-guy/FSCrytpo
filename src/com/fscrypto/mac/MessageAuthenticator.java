@@ -65,12 +65,9 @@ public class MessageAuthenticator {
 		final Mac mac = Mac.getInstance(algorithm);
 		mac.init(keySpec);
 		InputStreamReader.read(in, new InputStreamReadCallback() {
-			@Override
 			public void update(byte b) throws GeneralSecurityException {
 				mac.update(b);
 			}
-			
-			@Override
 			public void update(byte[] bytes) throws GeneralSecurityException {
 				mac.update(bytes);				
 			}

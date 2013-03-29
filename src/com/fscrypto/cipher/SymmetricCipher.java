@@ -17,7 +17,7 @@ import com.fscrypto.utils.InputStreamReader;
 
 //TODO: What do we want to do with these throws clauses?
 /**
- * This class is used to encrypt or decrypt data using an symmetric-key cipher such as RSA.  All methods are thread-safe.
+ * This class is used to encrypt or decrypt data using an symmetric-key cipher such as AES.  All methods are thread-safe.
  * @author John Larison
  * @since 0.1.ALPHA
  * @see {@link Engines} {@link Paddings} {@link Modes}
@@ -52,12 +52,10 @@ public class SymmetricCipher {
 			cipher.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(iv));
 		}
 		InputStreamReader.read(in, new InputStreamReadCallback() {
-			@Override
 			public void update(byte b) throws IOException, GeneralSecurityException {
 				byte[] input = {b};
 				update(input);
 			}
-			@Override
 			public void update(byte[] bytes) throws IOException, GeneralSecurityException {
 				out.write(cipher.update(bytes));
 			}
@@ -104,12 +102,10 @@ public class SymmetricCipher {
 			cipher.init(Cipher.DECRYPT_MODE, keySpec);
 		}
 		InputStreamReader.read(in, new InputStreamReadCallback() {
-			@Override
 			public void update(byte b) throws IOException, GeneralSecurityException {
 				byte[] input = {b};
 				update(input);
 			}
-			@Override
 			public void update(byte[] bytes) throws IOException, GeneralSecurityException {
 				out.write(cipher.update(bytes));
 			}

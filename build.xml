@@ -70,9 +70,9 @@
 	</target>
 	
 	<target name="compile" depends="resolve">
-		<javac srcdir="${src}" destdir="${build}" debug="true" includeantruntime="false">
+		<javac srcdir="${src}" destdir="${build}" debug="true" includeantruntime="false" source="1.5" target="1.5">
 			<compilerarg value="-Xlint:all"/>
-			<compilerarg value="-Werror"/>
+			<!--<compilerarg value="-Werror"/>-->
 			<classpath refid="lib.path"/>
 		</javac>
 	</target>
@@ -82,7 +82,7 @@
 	</target>
 	
 	<target name="compile-tests" depends="resolve-tests, make-jar">
-		<javac srcdir="${test.src}" destdir="${test.build}" debug="true" includeantruntime="false">
+		<javac srcdir="${test.src}" destdir="${test.build}" debug="true" includeantruntime="false" source="1.5" target="1.5">
 			<classpath>
 				<path refid="test.lib.path"/>
 				<pathelement location="${ant.project.name}.jar"/>
